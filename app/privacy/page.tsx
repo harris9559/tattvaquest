@@ -1,16 +1,25 @@
-export const metadata = {
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
     "Privacy Policy for TattvaQuest's LegalTech and data automation services (informational template only).",
+  openGraph: {
+    title: "Privacy Policy | TattvaQuest",
+    description:
+      "Example Privacy Policy structure for organizations using TattvaQuest's LegalTech and data automation platform.",
+    url: "/privacy",
+    type: "website",
+  },
 };
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <header className="space-y-4">
         <p className="section-heading">Privacy Policy</p>
         <h1 className="section-title">How TattvaQuest approaches privacy and data handling.</h1>
-        <p className="section-body max-w-2xl">
+        <p className="section-body">
           The content on this page is provided as a product template example only and does not
           constitute legal advice. Organizations should work with qualified counsel to review and
           finalize their own privacy policies.

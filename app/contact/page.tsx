@@ -29,17 +29,21 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <header className="space-y-4">
         <p className="section-heading">Contact</p>
         <h1 className="section-title">Start a conversation with TattvaQuest.</h1>
-        <p className="section-body max-w-2xl">
+        <p className="section-body">
           Share a brief summary of your incident response, eDiscovery, or compliance automation
           initiatives. Our team will follow up to coordinate next steps.
         </p>
       </header>
 
-      <section id="request-demo" className="max-w-xl rounded-xl border border-white/5 bg-slate-950/70 p-5 shadow-subtle">
+      <section
+        id="request-demo"
+        className="max-w-xl rounded-xl border border-white/5 bg-slate-950/70 p-5 shadow-subtle"
+        aria-label="Contact form"
+      >
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-1 text-sm">
             <label htmlFor="name" className="text-zinc-200">
@@ -51,7 +55,7 @@ export default function ContactPage() {
               required
               value={form.name}
               onChange={(event) => handleChange("name", event.target.value)}
-              className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 focus:border-sky-400"
+              className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 focus:border-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               placeholder="Full name"
             />
           </div>
@@ -67,7 +71,7 @@ export default function ContactPage() {
               required
               value={form.email}
               onChange={(event) => handleChange("email", event.target.value)}
-              className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 focus:border-sky-400"
+              className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 focus:border-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               placeholder="you@company.com"
             />
           </div>
@@ -83,14 +87,14 @@ export default function ContactPage() {
               rows={4}
               value={form.message}
               onChange={(event) => handleChange("message", event.target.value)}
-              className="w-full resize-none rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 focus:border-sky-400"
+              className="w-full resize-none rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 focus:border-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               placeholder="Briefly describe your current workflow, timelines, and stakeholders."
             />
           </div>
 
           <button
             type="submit"
-            className="inline-flex w-full items-center justify-center rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-black shadow-subtle transition hover:bg-sky-400"
+            className="inline-flex w-full items-center justify-center rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-black shadow-subtle transition hover:bg-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           >
             Submit inquiry (frontend only)
           </button>

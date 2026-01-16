@@ -1,7 +1,16 @@
-export const metadata = {
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
   title: "Solutions",
   description:
     "Solutions for incident response, disaster recovery, eDiscovery, evidence management, and compliance automation.",
+  openGraph: {
+    title: "Solutions | TattvaQuest",
+    description:
+      "LegalTech solutions for incident response, disaster recovery, eDiscovery, evidence management, and compliance automation.",
+    url: "/solutions",
+    type: "website",
+  },
 };
 
 interface SolutionItem {
@@ -49,18 +58,18 @@ export default function SolutionsPage() {
       <header className="space-y-4">
         <p className="section-heading">Solutions</p>
         <h1 className="section-title">Legal process automation for high-stakes workflows.</h1>
-        <p className="section-body max-w-2xl">
+        <p className="section-body">
           TattvaQuest connects security, legal, and operations teams around shared data and structured
           workflows. We provide LegalTech automation for incident response, disaster recovery,
           eDiscovery, evidence processing, and compliance programs.
         </p>
       </header>
 
-      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {solutions.map((item) => (
           <article
             key={item.title}
-            className="flex flex-col justify-between rounded-xl border border-white/5 bg-slate-950/70 p-4 shadow-subtle"
+            className="flex flex-col justify-between rounded-xl border border-white/5 bg-slate-950/70 p-4 shadow-subtle transition-transform transition-colors md:hover:-translate-y-0.5 md:hover:border-sky-500/60 md:hover:bg-slate-950"
           >
             <div className="space-y-2">
               <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-sky-300">
