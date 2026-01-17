@@ -1,33 +1,6 @@
-"use client";
-
-import { useState } from "react";
-
-interface ContactFormState {
-  name: string;
-  email: string;
-  message: string;
-}
+import ContactForm from "../_components/ContactForm";
 
 export default function ContactPage() {
-  const [form, setForm] = useState<ContactFormState>({
-    name: "",
-    email: "",
-    message: "",
-  });
-  const [submitted, setSubmitted] = useState(false);
-
-  function handleChange<K extends keyof ContactFormState>(
-    key: K,
-    value: ContactFormState[K],
-  ) {
-    setForm((previous) => ({ ...previous, [key]: value }));
-  }
-
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSubmitted(true);
-  }
-
   return (
     <div className="space-y-10">
       <header className="space-y-4">
@@ -44,71 +17,7 @@ export default function ContactPage() {
         className="max-w-xl rounded-xl border border-white/5 bg-slate-950/70 p-5 shadow-subtle"
         aria-label="Contact form"
       >
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-1 text-sm">
-            <label htmlFor="name" className="text-zinc-200">
-              Name
-            </label>
-            <input
-              id="name"
-              name="name"
-              required
-              value={form.name}
-              onChange={(event) => handleChange("name", event.target.value)}
-              className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 focus:border-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              placeholder="Full name"
-            />
-          </div>
-
-          <div className="space-y-1 text-sm">
-            <label htmlFor="email" className="text-zinc-200">
-              Work email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              value={form.email}
-              onChange={(event) => handleChange("email", event.target.value)}
-              className="w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 focus:border-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              placeholder="you@company.com"
-            />
-          </div>
-
-          <div className="space-y-1 text-sm">
-            <label htmlFor="message" className="text-zinc-200">
-              How can we help?
-            </label>
-            <textarea
-              id="message"
-              name="message"
-              required
-              rows={4}
-              value={form.message}
-              onChange={(event) => handleChange("message", event.target.value)}
-              className="w-full resize-none rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none ring-0 focus:border-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              placeholder="Briefly describe your current workflow, timelines, and stakeholders."
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="inline-flex w-full items-center justify-center rounded-full bg-sky-500 px-5 py-2.5 text-sm font-semibold text-black shadow-subtle transition hover:bg-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-          >
-            Submit inquiry (frontend only)
-          </button>
-
-          <p className="text-[11px] leading-relaxed text-zinc-500">
-            This form is for demonstration purposes only. No data is transmitted or stored.
-          </p>
-
-          {submitted && (
-            <div className="rounded-md border border-emerald-500/40 bg-emerald-950/40 px-3 py-2 text-[11px] text-emerald-200">
-              Thank you. Your message has been captured locally in this demo environment.
-            </div>
-          )}
-        </form>
+        <ContactForm />
       </section>
     </div>
   );
