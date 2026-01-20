@@ -13,7 +13,7 @@ const services = [
   },
   {
     title: "Incident Response",
-    description: "Rapid response support for security incidents, data breaches, and cyber attacks with 24/7 availability and structured escalation protocols.",
+    description: "Rapid response support for security incidents, data breaches, and cyber attacks with structured escalation protocols.",
     image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80",
     icon: (
       <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -29,7 +29,7 @@ export default function HomeCapabilitiesSection() {
                 "Free initial consultation",
                 "Rapid response for urgent matters",
                 "Flexible engagement models",
-                "Strict confidentiality guaranteed",
+                "Strict confidentiality",
               ].map((item) => (
                 <li key={item} className="flex items-center gap-3 text-zinc-200">
                   <svg className="h-5 w-5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

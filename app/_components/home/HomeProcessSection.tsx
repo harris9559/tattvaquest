@@ -51,7 +51,7 @@ export default function HomeProcessSection() {
             How We Work
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-zinc-400">
-            A structured, transparent approach that ensures quality outcomes and keeps you informed at every stage.
+            A structured, transparent approach designed for clarity and defensibility, keeping you informed at every stage.
           </p>
         </div>
 

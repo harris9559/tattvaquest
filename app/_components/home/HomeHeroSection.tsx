@@ -54,20 +54,20 @@ export default function HomeHeroSection() {
 
           <div className="mt-12 grid grid-cols-2 gap-8 border-t border-white/10 pt-8 sm:grid-cols-4">
             <div>
-              <div className="text-3xl font-bold text-white">15+</div>
-              <div className="mt-1 text-sm text-zinc-400">Years Experience</div>
+              <div className="text-3xl font-bold text-white">Founder-Led</div>
+              <div className="mt-1 text-sm text-zinc-400">Principal Consulting</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-white">500+</div>
-              <div className="mt-1 text-sm text-zinc-400">Investigations</div>
+              <div className="text-3xl font-bold text-white">20+ Years</div>
+              <div className="mt-1 text-sm text-zinc-400">Principal Experience</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-white">50+</div>
-              <div className="mt-1 text-sm text-zinc-400">Enterprise Clients</div>
+              <div className="text-3xl font-bold text-white">Defensible</div>
+              <div className="mt-1 text-sm text-zinc-400">Methods & Reporting</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-white">99%</div>
-              <div className="mt-1 text-sm text-zinc-400">Client Satisfaction</div>
+              <div className="text-3xl font-bold text-white">Confidential</div>
+              <div className="mt-1 text-sm text-zinc-400">By Design</div>
             </div>
           </div>
         </div>

@@ -1,13 +1,13 @@
 export default function HomeTrustedBySection() {
   const logos = [
-    { name: "Fortune 500 Corp", abbr: "F500" },
-    { name: "Global Bank", abbr: "GB" },
-    { name: "Tech Giant", abbr: "TG" },
-    { name: "Law Firm LLP", abbr: "LF" },
-    { name: "Insurance Co", abbr: "IC" },
-    { name: "Pharma Inc", abbr: "PI" },
-    { name: "Energy Corp", abbr: "EC" },
-    { name: "Retail Group", abbr: "RG" },
+    { name: "Digital Forensics", abbr: "DF" },
+    { name: "eDiscovery", abbr: "ED" },
+    { name: "Incident Response", abbr: "IR" },
+    { name: "Evidence Handling", abbr: "EH" },
+    { name: "Chain of Custody", abbr: "CC" },
+    { name: "Compliance Workflows", abbr: "CW" },
+    { name: "Data Governance", abbr: "DG" },
+    { name: "LegalTech Advisory", abbr: "LA" },
   ];
 
   return (
@@ -15,7 +15,7 @@ export default function HomeTrustedBySection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <p className="text-sm font-medium uppercase tracking-wider text-zinc-500">
-            Trusted by Leading Organizations Worldwide
+            Built for High-Stakes Legal & Security Workflows
           </p>
         </div>
 
@@ -38,7 +38,7 @@ export default function HomeTrustedBySection() {
         </div>
 
         <p className="mt-8 text-center text-xs text-zinc-600">
-          Client names shown are representative placeholders. Actual client identities are confidential.
+          Labels shown are illustrative placeholders.
         </p>
       </div>
     </section>
