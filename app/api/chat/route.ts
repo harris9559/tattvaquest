@@ -22,6 +22,7 @@ const ragPipeline = {
           content: 'Digital forensics involves the recovery and investigation of material found in digital devices...',
           title: 'Digital Forensics Guide',
           source: 'Internal Documentation',
+          file_name: 'Digital-forensics-guide.pdf',
           category: 'Forensics',
           similarity: 0.85,
           keyword_rank: 0.9,
