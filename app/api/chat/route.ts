@@ -5,6 +5,21 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
+/* ADDED: Type definition so TypeScript knows file_name exists */
+type SourceDocument = {
+  id: string
+  content: string
+  title: string
+  source: string
+  file_name?: string
+  category?: string
+  similarity?: number
+  keyword_rank?: number
+  combined_score?: number
+  created_at?: string
+};
+
 // Import the enhanced RAG pipeline with hybrid retrieval
 // Note: In production, ensure the backend modules are properly bundled
 const ragPipeline = {
@@ -16,7 +31,7 @@ const ragPipeline = {
     
     try {
       // Simulate hybrid search results
-      const mockDocuments = [
+      const mockDocuments: SourceDocument[] = [
         {
           id: 'doc-1',
           content: 'Digital forensics involves the recovery and investigation of material found in digital devices...',
@@ -70,38 +85,29 @@ const ragPipeline = {
         hasContext: false
       };
     }
+  },
+
+  /* ADDED: Missing functions so GET and DELETE routes don't crash */
+
+  async getChatHistory(limit: number) {
+    console.log('[Chat API] Returning mock chat history');
+    return [];
+  },
+
+  async clearChatHistory() {
+    console.log('[Chat API] Chat history cleared');
+    return true;
   }
 };
 
 /**
  * POST /api/chat
- * 
- * Request body:
- * {
- *   "message": "User's question or message",
- *   "session_id": "optional session identifier"
- * }
- * 
- * Response:
- * {
- *   "reply": "AI response text",
- *   "sources": [
- *     {
- *       "id": "document_id",
- *       "content": "relevant content snippet",
- *       "similarity": 0.85,
- *       "file_name": "source_document.pdf"
- *     }
- *   ]
- * }
  */
 export async function POST(request: NextRequest) {
   try {
-    // Parse request body
     const body = await request.json();
     const { message } = body;
 
-    // Validate input
     if (!message || typeof message !== 'string') {
       return NextResponse.json(
         { error: 'Message is required and must be a string' },
@@ -125,10 +131,8 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Chat API] Processing message: ${message.substring(0, 100)}...`);
 
-    // Process the query through RAG pipeline
     const result = await ragPipeline.processQuery(message);
 
-    // Format response for frontend
     const response = {
       reply: result.response,
       sources: result.sources.map(source => ({
@@ -146,7 +150,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[Chat API] Error processing request:', error);
 
-    // Return a graceful error response
     const errorResponse = {
       reply: "I apologize, but I'm experiencing technical difficulties right now. For immediate assistance, please contact our legal forensics team directly or visit tattvaquest.com.",
       sources: []
@@ -158,26 +161,12 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/chat
- * 
- * Retrieve chat history for the current session
- * 
- * Response:
- * {
- *   "messages": [
- *     {
- *       "user_message": "User's question",
- *       "ai_response": "AI response",
- *       "created_at": "2024-03-07T18:00:00Z"
- *     }
- *   ]
- * }
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '10');
 
-    // Get chat history from RAG pipeline
     const messages = await ragPipeline.getChatHistory(limit);
 
     return NextResponse.json({ messages });
@@ -193,8 +182,6 @@ export async function GET(request: NextRequest) {
 
 /**
  * DELETE /api/chat
- * 
- * Clear chat history for the current session
  */
 export async function DELETE() {
   try {
