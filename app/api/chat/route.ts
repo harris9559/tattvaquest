@@ -5,21 +5,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-
-/* ADDED: Type definition so TypeScript knows file_name exists */
-type SourceDocument = {
-  id: string
-  content: string
-  title: string
-  source: string
-  file_name?: string
-  category?: string
-  similarity?: number
-  keyword_rank?: number
-  combined_score?: number
-  created_at?: string
-};
-
 // Import the enhanced RAG pipeline with hybrid retrieval
 // Note: In production, ensure the backend modules are properly bundled
 const ragPipeline = {
@@ -31,13 +16,12 @@ const ragPipeline = {
     
     try {
       // Simulate hybrid search results
-      const mockDocuments: SourceDocument[] = [
+      const mockDocuments = [
         {
           id: 'doc-1',
           content: 'Digital forensics involves the recovery and investigation of material found in digital devices...',
           title: 'Digital Forensics Guide',
           source: 'Internal Documentation',
-          file_name: 'Digital-forensics-guide.pdf',
           category: 'Forensics',
           similarity: 0.85,
           keyword_rank: 0.9,
@@ -70,41 +54,47 @@ const ragPipeline = {
 
       return {
         response,
-        sources: mockDocuments,
+        sources: documents,
         retrievalMethod: hasContext ? 'hybrid' : 'general_knowledge',
         hasContext
-      };
-
+      }
     } catch (error) {
-      console.error('[Chat API] Error in hybrid RAG:', error);
-      
+      console.error('[Chat API] Error in RAG pipeline:', error)
       return {
-        response: `I apologize, but I'm having trouble accessing our knowledge base right now. For assistance with "${query}", please contact our legal forensics team directly.`,
+        response: 'AI system temporarily unavailable.',
         sources: [],
         retrievalMethod: 'error',
         hasContext: false
-      };
+      }
     }
-  },
-
-  /* ADDED: Missing functions so GET and DELETE routes don't crash */
-
-  async getChatHistory(limit: number) {
-    console.log('[Chat API] Returning mock chat history');
-    return [];
-  },
-
-  async clearChatHistory() {
-    console.log('[Chat API] Chat history cleared');
-    return true;
   }
 };
 
 /**
  * POST /api/chat
+ * 
+ * Request body:
+ * {
+ *   "message": "User's question or message",
+ *   "session_id": "optional session identifier"
+ * }
+ * 
+ * Response:
+ * {
+ *   "reply": "AI response text",
+ *   "sources": [
+ *     {
+ *       "id": "document_id",
+ *       "content": "relevant content snippet",
+ *       "similarity": 0.85,
+ *       "file_name": "source_document.pdf"
+ *     }
+ *   ]
+ * }
  */
 export async function POST(request: NextRequest) {
   try {
+    // Parse request body
     const body = await request.json();
     const { message } = body;
 
@@ -112,44 +102,51 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Message is required and must be a string' },
         { status: 400 }
-      );
+      )
     }
 
     if (message.trim().length === 0) {
       return NextResponse.json(
         { error: 'Message cannot be empty' },
         { status: 400 }
-      );
+      )
     }
 
     if (message.length > 2000) {
       return NextResponse.json(
         { error: 'Message is too long (max 2000 characters)' },
         { status: 400 }
-      );
+      )
     }
 
-    console.log(`[Chat API] Processing message: ${message.substring(0, 100)}...`);
+    console.log(
+      `[Chat API] Processing message: ${message.substring(0, 100)}...`
+    )
 
+    // Process the query through RAG pipeline
     const result = await ragPipeline.processQuery(message);
 
     const response = {
       reply: result.response,
       sources: result.sources.map(source => ({
         id: source.id,
-        content: source.content.substring(0, 200) + (source.content.length > 200 ? '...' : ''),
+        content:
+          source.content.substring(0, 200) +
+          (source.content.length > 200 ? '...' : ''),
         similarity: source.similarity,
         file_name: source.file_name || 'Unknown Document'
       }))
-    };
+    }
 
-    console.log(`[Chat API] Generated response with ${result.sources.length} sources`);
+    console.log(
+      `[Chat API] Generated response with ${result.sources.length} sources`
+    )
 
-    return NextResponse.json(response);
-
+    return NextResponse.json(response)
   } catch (error) {
-    console.error('[Chat API] Error processing request:', error);
+    console.error('[Chat API] Error processing request:', error)
 
+    // Return a graceful error response
     const errorResponse = {
       reply: "I apologize, but I'm experiencing technical difficulties right now. For immediate assistance, please contact our legal forensics team directly or visit tattvaquest.com.",
       sources: []
@@ -161,38 +158,55 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/chat
+ * 
+ * Retrieve chat history for the current session
+ * 
+ * Response:
+ * {
+ *   "messages": [
+ *     {
+ *       "user_message": "User's question",
+ *       "ai_response": "AI response",
+ *       "created_at": "2024-03-07T18:00:00Z"
+ *     }
+ *   ]
+ * }
  */
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const { searchParams } = new URL(request.url)
+    const limit = parseInt(searchParams.get('limit') || '10')
 
+    // Get chat history from RAG pipeline
     const messages = await ragPipeline.getChatHistory(limit);
 
-    return NextResponse.json({ messages });
-
+    return NextResponse.json({ messages })
   } catch (error) {
-    console.error('[Chat API] Error fetching history:', error);
+    console.error('[Chat API] Error fetching history:', error)
+
     return NextResponse.json(
       { error: 'Failed to fetch chat history' },
       { status: 500 }
-    );
+    )
   }
 }
 
 /**
  * DELETE /api/chat
+ * 
+ * Clear chat history for the current session
  */
 export async function DELETE() {
   try {
-    await ragPipeline.clearChatHistory();
-    return NextResponse.json({ success: true });
+    await ragPipeline.clearChatHistory()
 
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('[Chat API] Error clearing history:', error);
+    console.error('[Chat API] Error clearing history:', error)
+
     return NextResponse.json(
       { error: 'Failed to clear chat history' },
       { status: 500 }
-    );
+    )
   }
 }
