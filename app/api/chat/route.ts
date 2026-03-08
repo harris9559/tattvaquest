@@ -562,7 +562,7 @@ export async function POST(request: NextRequest) {
           source.content.substring(0, 200) +
           (source.content.length > 200 ? '...' : ''),
         similarity: source.similarity,
-        file_name: source.file_name || 'Unknown Document'
+        file_name: (source as any).file_name || 'Unknown Document'
       }))
     }
 
