@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '../../../backend/database/supabase_client';
+import { supabase } from '@/backend/database/supabase_client';
 
 // Allowed file types and their MIME types
 const ALLOWED_FILE_TYPES = {
@@ -68,7 +68,7 @@ async function extractEntities(text: string): Promise<Array<{entity: string, ent
   // TODO: Implement Python service call
   // For now, return basic regex-based extraction
   
-  const entities = [];
+  const entities: Array<{entity: string, entity_type: string}> = [];
   
   // Email extraction
   const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
     
     // Check file type
     const mimeType = file.type;
-    const fileType = ALLOWED_FILE_TYPES[mimeType];
+    const fileType = ALLOWED_FILE_TYPES[mimeType as keyof typeof ALLOWED_FILE_TYPES];
     
     if (!fileType) {
       return NextResponse.json(
@@ -203,7 +203,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Extract entities
-    let entities = [];
+    let entities: Array<{entity: string, entity_type: string}> = [];
     try {
       entities = await extractEntities(text);
       console.log(`[Upload API] Extracted ${entities.length} entities`);

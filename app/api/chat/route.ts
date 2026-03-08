@@ -60,7 +60,7 @@ const supabase = supabaseUrl && supabaseKey
 // Groq API configuration
 const GROQ_API_KEY = process.env.GROQ_API_KEY
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
-const GROQ_MODEL = 'llama3-70b-8192'
+const GROQ_MODEL = 'llama-3.3-70b-versatile'
 
 // ============================================
 // FORENSIC ANALYSIS HELPERS
@@ -259,11 +259,28 @@ const ragPipeline = {
     console.log('[Chat API] Processing query with production RAG:', query)
 
     try {
-      // Step 1: Fetch documents from Supabase
+      // Step 1: Check environment variables
+      if (!supabaseUrl || !supabaseKey) {
+        console.error('[Chat API] CRITICAL: Missing SUPABASE_URL or SUPABASE_ANON_KEY environment variables')
+        throw new Error('Database configuration missing')
+      }
+      
+      if (!GROQ_API_KEY) {
+        console.error('[Chat API] CRITICAL: Missing GROQ_API_KEY environment variable')
+        throw new Error('AI service configuration missing')
+      }
+      
+      console.log('[Chat API] Environment check passed')
+      console.log('[Chat API] SUPABASE_URL:', supabaseUrl ? 'SET' : 'MISSING')
+      console.log('[Chat API] GROQ_API_KEY:', GROQ_API_KEY ? 'SET' : 'MISSING')
+
+      // Step 2: Fetch documents from Supabase
+      console.log('[Chat API] Step 1: Fetching documents...')
       const documents = await this.fetchDocuments(query)
       console.log('[Chat API] Fetched documents:', documents.length)
 
-      // Step 2: Extract forensic data from documents
+      // Step 3: Extract forensic data from documents
+      console.log('[Chat API] Step 2: Extracting forensic data...')
       const allText = documents.map(d => d.content).join('\n\n')
       const timeline = extractTimelineEvents(allText)
       const suspiciousActivities = detectSuspiciousActivity(allText)
@@ -271,12 +288,14 @@ const ragPipeline = {
       console.log('[Chat API] Extracted timeline events:', timeline.length)
       console.log('[Chat API] Detected suspicious activities:', suspiciousActivities.length)
 
-      // Step 3: Build forensic context
+      // Step 4: Build forensic context
       const context = buildForensicContext(documents, timeline, suspiciousActivities)
       const hasContext = documents.length > 0
 
-      // Step 4: Generate AI response via Groq
+      // Step 5: Generate AI response via Groq
+      console.log('[Chat API] Step 3: Generating AI response via Groq...')
       const response = await this.generateGroqResponse(query, context, hasContext, timeline, suspiciousActivities)
+      console.log('[Chat API] AI response generated successfully')
 
       return {
         response,
@@ -287,7 +306,9 @@ const ragPipeline = {
         hasContext
       }
     } catch (error) {
-      console.error('[Chat API] Error in RAG pipeline:', error)
+      console.error('[Chat API] CRITICAL ERROR in RAG pipeline:', error)
+      console.error('[Chat API] Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+      console.error('[Chat API] Error message:', error instanceof Error ? error.message : String(error))
       return {
         response: 'AI investigation system temporarily unavailable.',
         sources: [],
@@ -300,12 +321,17 @@ const ragPipeline = {
   },
 
   async fetchDocuments(query: string): Promise<SourceDocument[]> {
+    console.log('[Chat API] fetchDocuments: Starting fetch for query:', query)
+    
     if (!supabase) {
-      console.error('[Chat API] Supabase client not initialized')
+      console.error('[Chat API] fetchDocuments: CRITICAL - Supabase client not initialized')
+      console.error('[Chat API] fetchDocuments: supabaseUrl:', supabaseUrl ? 'SET' : 'MISSING')
+      console.error('[Chat API] fetchDocuments: supabaseKey:', supabaseKey ? 'SET' : 'MISSING')
       return []
     }
 
     try {
+      console.log('[Chat API] fetchDocuments: Executing Supabase query...')
       // Query documents table with text search
       const { data, error } = await supabase
         .from('documents')
@@ -314,17 +340,25 @@ const ragPipeline = {
         .limit(5)
 
       if (error) {
-        console.error('[Chat API] Supabase query error:', error)
+        console.error('[Chat API] fetchDocuments: Supabase query error:', error.message, error.code, error.details)
         // Fallback: get recent documents
+        console.log('[Chat API] fetchDocuments: Attempting fallback query...')
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('documents')
           .select('id, content, title, file_name, category, created_at')
           .limit(5)
 
-        if (fallbackError || !fallbackData) {
+        if (fallbackError) {
+          console.error('[Chat API] fetchDocuments: Fallback query also failed:', fallbackError.message)
           return []
         }
 
+        if (!fallbackData) {
+          console.log('[Chat API] fetchDocuments: Fallback returned no data')
+          return []
+        }
+
+        console.log('[Chat API] fetchDocuments: Fallback returned', fallbackData.length, 'documents')
         return fallbackData.map((doc: DocumentRow) => ({
           id: doc.id,
           content: doc.content,
@@ -336,16 +370,24 @@ const ragPipeline = {
       }
 
       if (!data || data.length === 0) {
+        console.log('[Chat API] fetchDocuments: No matches found, getting recent documents...')
         // No matches found, get recent documents
-        const { data: recentData } = await supabase
+        const { data: recentData, error: recentError } = await supabase
           .from('documents')
           .select('id, content, title, file_name, category, created_at')
           .limit(5)
 
-        if (!recentData) {
+        if (recentError) {
+          console.error('[Chat API] fetchDocuments: Recent docs query failed:', recentError.message)
           return []
         }
 
+        if (!recentData) {
+          console.log('[Chat API] fetchDocuments: No recent documents found')
+          return []
+        }
+
+        console.log('[Chat API] fetchDocuments: Found', recentData.length, 'recent documents')
         return recentData.map((doc: DocumentRow) => ({
           id: doc.id,
           content: doc.content,
@@ -356,6 +398,7 @@ const ragPipeline = {
         }))
       }
 
+      console.log('[Chat API] fetchDocuments: Found', data.length, 'matching documents')
       return data.map((doc: DocumentRow) => ({
         id: doc.id,
         content: doc.content,
@@ -365,7 +408,8 @@ const ragPipeline = {
         similarity: 0.85
       }))
     } catch (error) {
-      console.error('[Chat API] Error fetching documents:', error)
+      console.error('[Chat API] fetchDocuments: CRITICAL ERROR:', error)
+      console.error('[Chat API] fetchDocuments: Error stack:', error instanceof Error ? error.stack : 'No stack trace')
       return []
     }
   },
@@ -377,9 +421,13 @@ const ragPipeline = {
     timeline: TimelineEvent[],
     activities: SuspiciousActivity[]
   ): Promise<string> {
+    console.log('[Chat API] generateGroqResponse: Starting Groq API call')
+    console.log('[Chat API] generateGroqResponse: hasContext:', hasContext)
+    console.log('[Chat API] generateGroqResponse: context length:', context.length)
+    
     if (!GROQ_API_KEY) {
-      console.error('[Chat API] GROQ_API_KEY not configured')
-      return 'AI investigation system temporarily unavailable.'
+      console.error('[Chat API] generateGroqResponse: CRITICAL - GROQ_API_KEY not configured')
+      throw new Error('GROQ_API_KEY not configured')
     }
 
     try {
@@ -409,6 +457,9 @@ Based on the evidence above, provide a comprehensive investigation analysis incl
 4. Recommended investigation steps`
         : `Question:\n${query}\n\nProvide a helpful response based on general knowledge in digital forensics and legal technology.`
 
+      console.log('[Chat API] generateGroqResponse: Sending request to Groq API...')
+      console.log('[Chat API] generateGroqResponse: Model:', GROQ_MODEL)
+      
       const response = await fetch(GROQ_API_URL, {
         method: 'POST',
         headers: {
@@ -426,24 +477,32 @@ Based on the evidence above, provide a comprehensive investigation analysis incl
         }),
       })
 
+      console.log('[Chat API] generateGroqResponse: Groq API response status:', response.status)
+
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('[Chat API] Groq API error:', response.status, errorText)
-        return 'AI investigation system temporarily unavailable.'
+        console.error('[Chat API] generateGroqResponse: Groq API error:', response.status, response.statusText)
+        console.error('[Chat API] generateGroqResponse: Error details:', errorText)
+        throw new Error(`Groq API error: ${response.status} - ${errorText}`)
       }
 
       const data = await response.json()
+      console.log('[Chat API] generateGroqResponse: Groq response received, choices:', data.choices?.length)
+      
       const content = data.choices?.[0]?.message?.content
 
       if (!content) {
-        console.error('[Chat API] No content in Groq response')
-        return 'AI investigation system temporarily unavailable.'
+        console.error('[Chat API] generateGroqResponse: No content in Groq response')
+        console.error('[Chat API] generateGroqResponse: Full response:', JSON.stringify(data))
+        throw new Error('No content in Groq response')
       }
 
+      console.log('[Chat API] generateGroqResponse: Successfully generated response, length:', content.length)
       return content.trim()
     } catch (error) {
-      console.error('[Chat API] Error calling Groq:', error)
-      return 'AI investigation system temporarily unavailable.'
+      console.error('[Chat API] generateGroqResponse: CRITICAL ERROR:', error)
+      console.error('[Chat API] generateGroqResponse: Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+      throw error
     }
   },
 
@@ -556,13 +615,13 @@ export async function POST(request: NextRequest) {
       reply: result.response,
       timeline: result.timeline,
       suspicious_activities: result.suspicious_activities,
-      sources: result.sources.map(source => ({
+      sources: (result.sources as SourceDocument[]).map(source => ({
         id: source.id,
-        content:
-          source.content.substring(0, 200) +
-          (source.content.length > 200 ? '...' : ''),
+        content: source.content
+          ? source.content.substring(0, 200) + (source.content.length > 200 ? '...' : '')
+          : '',
         similarity: source.similarity,
-        file_name: (source as any).file_name || 'Unknown Document'
+        file_name: source.file_name || 'Unknown Document'
       }))
     }
 

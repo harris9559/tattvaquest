@@ -4,8 +4,8 @@
  * Implements enterprise-grade retrieval with comprehensive logging
  */
 
-import { supabase } from '../database/supabase_client';
-import { hybridRetrieval, DocumentResult } from './hybrid_retrieval';
+import { supabase } from '@/backend/database/supabase_client';
+import { hybridRetrieval, DocumentResult } from '@/backend/ai/hybrid_retrieval';
 
 // Environment variables
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
@@ -18,6 +18,14 @@ interface ChatMessage {
   user_message: string;
   ai_response: string;
   context_used: string[];
+}
+
+interface DocumentChunk {
+  id: string;
+  content: string;
+  title?: string;
+  file_name?: string;
+  similarity?: number;
 }
 
 interface RAGResponse {

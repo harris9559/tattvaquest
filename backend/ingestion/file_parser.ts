@@ -15,14 +15,16 @@ let simpleParser: any;
 async function loadDependencies() {
   if (!pdfParse) {
     try {
-      pdfParse = (await import('pdf-parse')).default;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      pdfParse = await import('pdf-parse') as any;
     } catch (error) {
       console.warn('[FileParser] pdf-parse not available, will use fallback');
     }
   }
   if (!simpleParser) {
     try {
-      const mailparser = await import('mailparser');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mailparser = await import('mailparser') as any;
       simpleParser = mailparser.simpleParser;
     } catch (error) {
       console.warn('[FileParser] mailparser not available, will use fallback for EML');

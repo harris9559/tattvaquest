@@ -3,7 +3,7 @@
  * Can be used with Express.js if needed
  */
 
-import { supabase } from '../database/supabase_client';
+import { supabase } from '@/backend/database/supabase_client';
 
 // Allowed file types
 const ALLOWED_FILE_TYPES: Record<string, string> = {
@@ -144,7 +144,7 @@ export async function handleListDocuments(req: any, res: any) {
  * Basic entity extraction using regex
  */
 function extractBasicEntities(text: string): Array<{text: string, type: string}> {
-  const entities = [];
+  const entities: Array<{text: string, type: string}> = [];
   
   // Emails
   const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;

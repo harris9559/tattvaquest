@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '../../../backend/database/supabase_client';
+import { supabase } from '@/backend/database/supabase_client';
 
 /**
  * Generate embedding for query text
@@ -18,6 +18,93 @@ async function generateEmbedding(text: string): Promise<number[]> {
   // Normalize the embedding
   const magnitude = Math.sqrt(mockEmbedding.reduce((sum, val) => sum + val * val, 0));
   return mockEmbedding.map(val => val / magnitude);
+}
+
+/**
+ * Shared search logic - can be called from POST, GET, or internally
+ */
+async function performSearch(query: string, limit: number = 5, threshold: number = 0.7) {
+  console.log(`[Search API] Searching for: ${query.substring(0, 100)}...`);
+
+  // Generate embedding for the query
+  const queryEmbedding = await generateEmbedding(query);
+
+  // Perform vector search using Supabase pgvector
+  let results: any[] = [];
+  
+  try {
+    // Try using RPC function first (if exists)
+    const { data, error } = await supabase
+      .rpc('search_documents', {
+        query_embedding: queryEmbedding,
+        similarity_threshold: threshold,
+        match_count: limit
+      });
+
+    if (error) {
+      console.log('[Search API] RPC not available, using direct query');
+      
+      // Fallback to direct SQL query
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('documents')
+        .select('id, content, file_name, file_type, created_at')
+        .order('created_at', { ascending: false })
+        .limit(limit * 2); // Get more to filter manually
+
+      if (fallbackError) {
+        throw fallbackError;
+      }
+
+      // Simple keyword-based fallback (not semantic, but functional)
+      results = fallbackData
+        .filter((doc: any) => 
+          doc.content.toLowerCase().includes(query.toLowerCase()) ||
+          doc.file_name.toLowerCase().includes(query.toLowerCase())
+        )
+        .slice(0, limit)
+        .map((doc: any) => ({
+          ...doc,
+          similarity: 0.8 // Mock similarity for keyword match
+        }));
+
+    } else {
+      results = data || [];
+    }
+
+  } catch (error) {
+    console.error('[Search API] Database search error:', error);
+    
+    // Final fallback: simple text search
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('documents')
+      .select('id, content, file_name, file_type, created_at')
+      .textSearch('content', query)
+      .limit(limit);
+
+    if (!fallbackError && fallbackData) {
+      results = fallbackData.map((doc: any) => ({
+        ...doc,
+        similarity: 0.7 // Mock similarity for text search
+      }));
+    }
+  }
+
+  // Format results
+  const formattedResults = results.map(result => ({
+    id: result.id,
+    content: result.content.substring(0, 300) + (result.content.length > 300 ? '...' : ''),
+    similarity: result.similarity || 0.5,
+    file_name: result.file_name || 'Unknown Document',
+    file_type: result.file_type || 'unknown',
+    created_at: result.created_at
+  }));
+
+  console.log(`[Search API] Found ${formattedResults.length} results`);
+
+  return {
+    results: formattedResults,
+    total: formattedResults.length
+  };
 }
 
 /**
@@ -73,87 +160,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[Search API] Searching for: ${query.substring(0, 100)}...`);
-
-    // Generate embedding for the query
-    const queryEmbedding = await generateEmbedding(query);
-
-    // Perform vector search using Supabase pgvector
-    let results: any[] = [];
-    
-    try {
-      // Try using RPC function first (if exists)
-      const { data, error } = await supabase
-        .rpc('search_documents', {
-          query_embedding: queryEmbedding,
-          similarity_threshold: threshold,
-          match_count: limit
-        });
-
-      if (error) {
-        console.log('[Search API] RPC not available, using direct query');
-        
-        // Fallback to direct SQL query
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('documents')
-          .select('id, content, file_name, file_type, created_at')
-          .order('created_at', { ascending: false })
-          .limit(limit * 2); // Get more to filter manually
-
-        if (fallbackError) {
-          throw fallbackError;
-        }
-
-        // Simple keyword-based fallback (not semantic, but functional)
-        results = fallbackData
-          .filter(doc => 
-            doc.content.toLowerCase().includes(query.toLowerCase()) ||
-            doc.file_name.toLowerCase().includes(query.toLowerCase())
-          )
-          .slice(0, limit)
-          .map(doc => ({
-            ...doc,
-            similarity: 0.8 // Mock similarity for keyword match
-          }));
-
-      } else {
-        results = data || [];
-      }
-
-    } catch (error) {
-      console.error('[Search API] Database search error:', error);
-      
-      // Final fallback: simple text search
-      const { data: fallbackData, error: fallbackError } = await supabase
-        .from('documents')
-        .select('id, content, file_name, file_type, created_at')
-        .textSearch('content', query)
-        .limit(limit);
-
-      if (!fallbackError && fallbackData) {
-        results = fallbackData.map(doc => ({
-          ...doc,
-          similarity: 0.7 // Mock similarity for text search
-        }));
-      }
-    }
-
-    // Format results
-    const formattedResults = results.map(result => ({
-      id: result.id,
-      content: result.content.substring(0, 300) + (result.content.length > 300 ? '...' : ''),
-      similarity: result.similarity || 0.5,
-      file_name: result.file_name || 'Unknown Document',
-      file_type: result.file_type || 'unknown',
-      created_at: result.created_at
-    }));
-
-    console.log(`[Search API] Found ${formattedResults.length} results`);
-
-    return NextResponse.json({
-      results: formattedResults,
-      total: formattedResults.length
-    });
+    const searchResult = await performSearch(query, limit, threshold);
+    return NextResponse.json(searchResult);
 
   } catch (error) {
     console.error('[Search API] Error processing search:', error);
@@ -187,16 +195,9 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
 
     if (query) {
-      // If query provided, use POST search logic
-      const requestBody = { query, limit };
-      const response = await POST(
-        new Request('http://localhost/api/search', {
-          method: 'POST',
-          body: JSON.stringify(requestBody),
-          headers: { 'Content-Type': 'application/json' }
-        })
-      );
-      return response;
+      // Use shared search logic instead of calling POST
+      const searchResult = await performSearch(query, limit);
+      return NextResponse.json(searchResult);
     } else {
       // If no query, return recent documents
       const { data, error } = await supabase
@@ -213,7 +214,7 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      const results = (data || []).map(doc => ({
+      const results = (data || []).map((doc: any) => ({
         id: doc.id,
         content: doc.content.substring(0, 300) + (doc.content.length > 300 ? '...' : ''),
         similarity: 1.0, // Perfect match for recent docs

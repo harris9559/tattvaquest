@@ -6,7 +6,7 @@
 
 import { supabase } from '../database/supabase_client';
 
-interface DocumentResult {
+export interface DocumentResult {
   id: string;
   content: string;
   title?: string;

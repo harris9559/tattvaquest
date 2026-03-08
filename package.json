@@ -13,8 +13,10 @@
     "@supabase/supabase-js": "^2.48.1",
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "mailparser": "^3.9.3",
     "next": "16.1.2",
     "openai": "^6.16.0",
+    "pdf-parse": "^2.4.5",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
