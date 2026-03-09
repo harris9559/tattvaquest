@@ -1,6 +1,5 @@
 const express = require("express");
 const cors = require("cors");
-const OpenAI = require("openai");
 const { getSupabaseClient } = require("./db/supabase");
 const { getSupabaseServiceClient } = require("./db/supabaseService");
 const fs = require("fs");
@@ -219,7 +218,7 @@ app.post("/api/chat", async (req, res) => {
 
   // Debug logging
   console.log("[/api/chat] Incoming message:", userMessage);
-  console.log("[/api/chat] OPENAI_API_KEY loaded:", !!process.env.OPENAI_API_KEY);
+  console.log("[/api/chat] GROQ_API_KEY loaded:", !!process.env.GROQ_API_KEY);
 
   if (!userMessage) {
     return jsonError(res, 400, "validation_error", "Message is required");
@@ -229,42 +228,56 @@ app.post("/api/chat", async (req, res) => {
     return jsonError(res, 400, "validation_error", "Message is too long");
   }
 
-  const openaiApiKey = process.env.OPENAI_API_KEY;
+  const groqApiKey = process.env.GROQ_API_KEY;
 
-  if (!openaiApiKey) {
-    console.log("[/api/chat] ERROR: OPENAI_API_KEY is not set");
+  if (!groqApiKey) {
+    console.log("[/api/chat] ERROR: GROQ_API_KEY is not set");
     return res.status(200).json({
-      reply: "Thank you for your question. For detailed assistance, I recommend speaking with one of our consultants who can provide personalized guidance. Would you like to leave your contact details?",
+      reply: "AI investigation system temporarily unavailable. Please try again later.",
     });
   }
 
   try {
-    const openai = new OpenAI({ apiKey: openaiApiKey });
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: CHAT_SYSTEM_PROMPT },
-        { role: "user", content: userMessage },
-      ],
-      max_tokens: 150,
-      temperature: 0.7,
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${groqApiKey}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          { role: "system", content: CHAT_SYSTEM_PROMPT },
+          { role: "user", content: userMessage },
+        ],
+        max_tokens: 1500,
+        temperature: 0.7,
+      }),
     });
 
-    const aiReply = completion.choices?.[0]?.message?.content?.trim();
-    console.log("[/api/chat] AI reply:", aiReply);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[/api/chat] Groq API error:", response.status, errorText);
+      return res.status(200).json({
+        reply: "I apologize, but I'm having trouble processing your request right now. Please try again.",
+      });
+    }
+
+    const data = await response.json();
+    const aiReply = data.choices?.[0]?.message?.content?.trim();
+    console.log("[/api/chat] AI reply generated successfully");
 
     if (!aiReply) {
       return res.status(200).json({
-        reply: "Thank you for your question. For the most accurate guidance, I recommend speaking with one of our consultants. Would you like to share your contact details?",
+        reply: "Thank you for your question. I'm processing your request. Please try again.",
       });
     }
 
     return res.status(200).json({ reply: aiReply });
   } catch (err) {
-    console.error("[/api/chat] OpenAI error:", err.message || err);
+    console.error("[/api/chat] Groq error:", err.message || err);
     return res.status(200).json({
-      reply: "I apologize for the inconvenience. Our team would be happy to assist you directly. Would you like to leave your contact information?",
+      reply: "I apologize for the inconvenience. Please try again.",
     });
   }
 });
@@ -292,36 +305,36 @@ app.post("/api/chat-ai", async (req, res) => {
     return jsonError(res, 400, "validation_error", "Message is too long");
   }
 
-  const openaiApiKey = process.env.OPENAI_API_KEY;
+  const groqApiKey = process.env.GROQ_API_KEY;
 
-  if (!openaiApiKey) {
+  if (!groqApiKey) {
     // Fallback response when no API key is configured
     return res.status(200).json({
-      reply: "Thank you for your question. For detailed assistance, I recommend speaking with one of our consultants who can provide personalized guidance. Would you like to leave your contact details?",
+      reply: "AI investigation system temporarily unavailable. Please try again later.",
     });
   }
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${openaiApiKey}`,
+        Authorization: `Bearer ${groqApiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "llama-3.3-70b-versatile",
         messages: [
           { role: "system", content: CHAT_AI_SYSTEM_PROMPT },
           { role: "user", content: userMessage },
         ],
-        max_tokens: 150,
+        max_tokens: 1500,
         temperature: 0.7,
       }),
     });
 
     if (!response.ok) {
       return res.status(200).json({
-        reply: "I apologize, but I'm having trouble processing your request right now. Would you like to leave your contact details so a consultant can follow up with you?",
+        reply: "I apologize, but I'm having trouble processing your request right now. Please try again.",
       });
     }
 
@@ -330,14 +343,14 @@ app.post("/api/chat-ai", async (req, res) => {
 
     if (!aiReply) {
       return res.status(200).json({
-        reply: "Thank you for your question. For the most accurate guidance, I recommend speaking with one of our consultants. Would you like to share your contact details?",
+        reply: "Thank you for your question. I'm processing your request. Please try again.",
       });
     }
 
     return res.status(200).json({ reply: aiReply });
   } catch (_e) {
     return res.status(200).json({
-      reply: "I apologize for the inconvenience. Our team would be happy to assist you directly. Would you like to leave your contact information?",
+      reply: "I apologize for the inconvenience. Please try again.",
     });
   }
 });

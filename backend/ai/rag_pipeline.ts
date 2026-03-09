@@ -9,13 +9,12 @@ import { supabase } from '../database/supabase_client';
 
 // Environment variables
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY;
 
 // API configurations
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const OPENAI_API_URL = 'https://api.openai.com/v1/embeddings';
-const MODEL_NAME = 'llama-3.1-8b-instant'; // Current Groq model
-const EMBEDDING_MODEL = 'text-embedding-3-small'; // OpenAI's latest embedding model
+const HUGGINGFACE_EMBEDDING_URL = 'https://api-inference.huggingface.co/models/BAAI/bge-small-en-v1.5';
+const MODEL_NAME = 'llama-3.1-8b-instant';
 
 interface DocumentResult {
   id: string;
@@ -49,39 +48,38 @@ interface RAGResponse {
  */
 export class RAGPipeline {
   /**
-   * Generate embedding for query text using OpenAI API
+   * Generate embedding for query text using HuggingFace API or fallback to mock
    */
   private async generateEmbedding(text: string): Promise<number[]> {
-    if (!OPENAI_API_KEY) {
-      console.warn('[RAG Pipeline] OPENAI_API_KEY not set, using mock embedding');
+    if (!HUGGINGFACE_API_KEY) {
+      console.warn('[RAG Pipeline] HUGGINGFACE_API_KEY not set, using mock embedding');
       return this.generateMockEmbedding();
     }
 
     try {
-      console.log('[RAG Pipeline] Generating embedding with OpenAI...');
+      console.log('[RAG Pipeline] Generating embedding with HuggingFace...');
       
-      const response = await fetch(OPENAI_API_URL, {
+      const response = await fetch(HUGGINGFACE_EMBEDDING_URL, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${HUGGINGFACE_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: EMBEDDING_MODEL,
-          input: text,
-          encoding_format: 'float'
+          inputs: text,
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+        console.warn('[RAG Pipeline] HuggingFace API error:', response.status);
+        return this.generateMockEmbedding();
       }
 
-      const data = await response.json();
-      const embedding = data.data?.[0]?.embedding;
+      const embedding = await response.json();
 
-      if (!embedding) {
-        throw new Error('No embedding returned from OpenAI API');
+      if (!embedding || !Array.isArray(embedding)) {
+        console.warn('[RAG Pipeline] Invalid embedding response from HuggingFace');
+        return this.generateMockEmbedding();
       }
 
       console.log('[RAG Pipeline] Embedding generated successfully, dimension:', embedding.length);
