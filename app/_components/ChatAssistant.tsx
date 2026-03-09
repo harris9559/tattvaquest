@@ -64,7 +64,7 @@ export default function ChatAssistant() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("https://tattvaquest-api.onrender.com/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -75,7 +75,7 @@ export default function ChatAssistant() {
       });
 
       if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        throw new Error(`Backend request failed: ${res.status}`);
       }
 
       const data = await res.json();
@@ -93,7 +93,7 @@ export default function ChatAssistant() {
       const errorMessage: Message = {
         id: generateId(),
         role: "assistant",
-        content: "I'm experiencing technical difficulties. Please try again in a moment.",
+        content: "I'm experiencing technical difficulties connecting to the backend. Please try again in a moment.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
